@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 import scipy
+
 import sklearn
 from sklearn.preprocessing import StandardScaler
 
@@ -21,12 +22,16 @@ hcc_data['Class'] = hcc_data['Class'].map({'dies': 0, 'lives': 1})
 # Lista de colunas que devem ser numéricas
 numerical_cols = ['Grams_day', 'Packs_year', 'INR', 'AFP', 'Hemoglobin', 'MCV', 'Leucocytes', 'Platelets',
                   'Albumin', 'Total_Bil', 'ALT', 'AST', 'GGT', 'ALP', 'TP', 'Creatinine', 'Nodules', 'Major_Dim',
-                  'Dir_Bil', 'Iron', 'Sat', 'Ferritin']
+                  'Dir_Bil', 'Iron', 'Sat', 'Ferritin','Class']
 
 # Converter cada coluna para numérico, tratando erros
 for col in numerical_cols:
-    hcc_data[col] = pd.to_numeric(hcc_data[col].str.replace(' ',''), errors='coerce')
-
+    # Verificar se a coluna é de tipo object, indicando possível presença de strings
+    if hcc_data[col].dtype == 'object':
+        hcc_data[col] = pd.to_numeric(hcc_data[col].str.replace(' ', ''), errors='coerce')
+    else:
+        # Se não for object, converte diretamente
+        hcc_data[col] = pd.to_numeric(hcc_data[col], errors='coerce')
 
 def impute_missing_data(data):
     for column in data.columns:
@@ -39,9 +44,10 @@ def impute_missing_data(data):
             median_value = data[column].median()
             data[column] = data[column].fillna(median_value)
 
+print(hcc_data['Class'].unique())
+print(hcc_data.isnull().sum())
 # Aplicar a função ao dataset
 impute_missing_data(hcc_data)
-
 
 from sklearn.model_selection  import train_test_split
 
@@ -50,18 +56,17 @@ y = hcc_data['Class'] #apenas coluna Class
 
 X_train,X_test,y_train,Y_test = train_test_split(X,y,test_size=0.2)
 
-train_data = X_train.join(y_train) #junta apenas para  visualizar os dados de treino
+# Criando um novo DataFrame apenas com colunas numéricas
+numeric_data = hcc_data.select_dtypes(include=[np.number])
 
-#Escalar dados
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+# Calculando a correlação apenas nas colunas numéricas
+correlation_matrix = numeric_data.corr()
 
 # Criando o heatmap
 plt.figure(figsize=(12,10 ))
-sns.heatmap(hcc_data.corr(), annot=True, fmt=".2f", cmap='coolwarm', cbar_kws={'label': 'Coefficient of Correlation'},annot_kws={'size':8})
+sns.heatmap(correlation_matrix, annot=True, fmt=".2f", cmap='coolwarm', cbar_kws={'label': 'Coefficient of Correlation'},annot_kws={'size':8})
 plt.title('Heatmap de Correlação das Variáveis Numéricas')
-plt.show()
+#plt.show()
 
 # Criar histogramas para todas as variáveis numéricas
 for column in hcc_data.select_dtypes(include=['float64', 'int64']).columns:
@@ -84,6 +89,7 @@ for column in hcc_data.columns:
         #plt.show()  # Exibe o gráfico
 
 #Data preprocessing
+train_data = X_train.join(y_train) #junta apenas para  visualizar os dados de treino
 train_data['Age'] = np.log(train_data['Age']+1) 
 
 
@@ -106,3 +112,4 @@ train_data['Age'] = np.log(train_data['Age']+1)
 
 # Descrição estatística básica
 #print(hcc_data.describe())
+
