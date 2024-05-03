@@ -13,11 +13,32 @@ from sklearn.preprocessing import StandardScaler
 # Carregar o dataset
 hcc_data = pd.read_csv(r'C:\Users\leono\OneDrive\Documents\Faculdade\EIACD\PROJETO2\hcc_dataset.csv')
 
+
 # Substituir '?' por NaN
 hcc_data.replace('?', np.nan, inplace=True)
 
-# Codificar a variável target e garantir que todas as variáveis são numéricas
-hcc_data['Class'] = hcc_data['Class'].map({'dies': 0, 'lives': 1})
+def impute_missing_data(data):
+    for column in data.columns:
+        if data[column].dtype == 'object':  # Para dados categóricos
+            # Preencher com a moda
+            mode_value = data[column].mode()[0]
+            data[column].fillna(mode_value,inplace=True)
+        else:  # Para dados numéricos
+            # Preencher com a mediana
+            median_value = data[column].median()
+            data[column].fillna(median_value,inplace=True)
+
+# Aplicar a função ao dataset
+impute_missing_data(hcc_data)
+
+for col in hcc_data.columns:
+    if hcc_data[col].dtype == object :
+        # Padronizar para maiúsculas e remover espaços
+        hcc_data[col] = hcc_data[col].str.upper().str.strip()
+        # Substituições
+        hcc_data[col].replace({'YES': 1, 'NO': 0}, inplace=True)
+        hcc_data[col].replace({'FEMALE':1 ,'MALE':0},inplace=True)
+        hcc_data[col].replace({'LIVES':1 ,'DIES':0},inplace=True)
 
 # Lista de colunas que devem ser numéricas
 numerical_cols = ['Grams_day', 'Packs_year', 'INR', 'AFP', 'Hemoglobin', 'MCV', 'Leucocytes', 'Platelets',
@@ -28,27 +49,12 @@ numerical_cols = ['Grams_day', 'Packs_year', 'INR', 'AFP', 'Hemoglobin', 'MCV', 
 for col in numerical_cols:
     # Verificar se a coluna é de tipo object, indicando possível presença de strings
     if hcc_data[col].dtype == 'object':
-        hcc_data[col] = pd.to_numeric(hcc_data[col].str.replace(' ', ''), errors='coerce')
+        hcc_data[col]=pd.to_numeric(hcc_data[col].str.replace(' ', ''), errors='coerce')
     else:
         # Se não for object, converte diretamente
-        hcc_data[col] = pd.to_numeric(hcc_data[col], errors='coerce')
+        hcc_data[col]=pd.to_numeric(hcc_data[col], errors='coerce')
 
-def impute_missing_data(data):
-    for column in data.columns:
-        if data[column].dtype == 'object':  # Para dados categóricos
-            # Preencher com a moda
-            mode_value = data[column].mode()[0]
-            data[column] =  data[column].fillna(mode_value)
-        else:  # Para dados numéricos
-            # Preencher com a mediana
-            median_value = data[column].median()
-            data[column] = data[column].fillna(median_value)
-
-print(hcc_data['Class'].unique())
-print(hcc_data.isnull().sum())
-# Aplicar a função ao dataset
-impute_missing_data(hcc_data)
-
+print(hcc_data.head())
 from sklearn.model_selection  import train_test_split
 
 X = hcc_data.drop(['Class'],axis = 1) #sem a coluna Class
@@ -104,8 +110,12 @@ train_data['Age'] = np.log(train_data['Age']+1)
 
 
 
+  
+
 # Exibir as primeiras linhas do dataset
 #print(hcc_data.head())
+
+#print(hcc_data.Sat.value_counts())
 
 # Resumir as informações do dataset
 #print(hcc_data.info())
