@@ -31,14 +31,24 @@ def impute_missing_data(data):
 # Aplicar a função ao dataset
 impute_missing_data(hcc_data)
 
+# Usando pandas get_dummies para converter variáveis categóricas em dummy/one-hot encoding
+#ela seria transformada em três novas colunas, uma para cada categoria, com 1 ou 0 indicando a presença da categoria.
+hcc_data = pd.get_dummies(hcc_data, columns=['PS'])
+# Converter valores booleanos para números inteiros
+hcc_data['PS_Active'] = hcc_data['PS_Active'].astype(int)
+hcc_data['PS_Ambulatory'] = hcc_data['PS_Ambulatory'].astype(int)
+hcc_data['PS_Restricted'] = hcc_data['PS_Restricted'].astype(int)
+hcc_data['PS_Selfcare'] = hcc_data['PS_Selfcare'].astype(int)
+hcc_data['PS_Disabled'] = hcc_data['PS_Disabled'].astype(int)
+
 for col in hcc_data.columns:
-    if hcc_data[col].dtype == object :
-        # Padronizar para maiúsculas e remover espaços
-        hcc_data[col] = hcc_data[col].str.upper().str.strip()
+    if hcc_data[col].dtype == object or hcc_data[col].dtype == bool :
         # Substituições
-        hcc_data[col].replace({'YES': 1, 'NO': 0}, inplace=True)
-        hcc_data[col].replace({'FEMALE':1 ,'MALE':0},inplace=True)
-        hcc_data[col].replace({'LIVES':1 ,'DIES':0},inplace=True)
+        hcc_data[col].replace({'Yes': 1, 'No': 0}, inplace=True)
+        hcc_data[col].replace({'Female':1 ,'Male':0},inplace=True)
+        hcc_data[col].replace({'Lives':1 ,'Dies':0},inplace=True)
+        hcc_data[col].replace({'Mild':1 ,'Moderate/Severe':0},inplace=True)
+        hcc_data[col].replace({'Grade I/II':1,'Grade III/IV':0},inplace=True)
 
 # Lista de colunas que devem ser numéricas
 numerical_cols = ['Grams_day', 'Packs_year', 'INR', 'AFP', 'Hemoglobin', 'MCV', 'Leucocytes', 'Platelets',
@@ -48,13 +58,13 @@ numerical_cols = ['Grams_day', 'Packs_year', 'INR', 'AFP', 'Hemoglobin', 'MCV', 
 # Converter cada coluna para numérico, tratando erros
 for col in numerical_cols:
     # Verificar se a coluna é de tipo object, indicando possível presença de strings
-    if hcc_data[col].dtype == 'object':
+    if hcc_data[col].dtype == 'object' :
         hcc_data[col]=pd.to_numeric(hcc_data[col].str.replace(' ', ''), errors='coerce')
     else:
         # Se não for object, converte diretamente
         hcc_data[col]=pd.to_numeric(hcc_data[col], errors='coerce')
 
-print(hcc_data.head())
+print(hcc_data.dtypes)
 from sklearn.model_selection  import train_test_split
 
 X = hcc_data.drop(['Class'],axis = 1) #sem a coluna Class
@@ -122,4 +132,3 @@ train_data['Age'] = np.log(train_data['Age']+1)
 
 # Descrição estatística básica
 #print(hcc_data.describe())
-
